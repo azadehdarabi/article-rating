@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from article.models import Article
+from applications.article.models import Article
 
 
 class RateArticleSerializer(serializers.Serializer):
@@ -12,4 +12,4 @@ class ArticleListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Article
-        fields = ['id', 'title', 'rating_count', 'average_rating', 'user_rating']
+        fields = ['uuid', 'title', 'rating_count', 'average_rating', 'user_rating']
