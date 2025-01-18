@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Article, Rating
+from .models import Article, UserArticleRate
 
 
 @admin.register(Article)
@@ -8,7 +8,7 @@ class ArticleAdmin(admin.ModelAdmin):
     search_fields = ('title',)
 
 
-@admin.register(Rating)
+@admin.register(UserArticleRate)
 class RatingAdmin(admin.ModelAdmin):
     list_display = ('user', 'article', 'rate')
     search_fields = ('user__username', 'article__title')

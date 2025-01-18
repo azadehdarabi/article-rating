@@ -1,3 +1,5 @@
+from venv import create
+
 from django.db.models import OuterRef, Subquery, IntegerField
 from rest_framework import status, generics
 from rest_framework.decorators import action
@@ -5,12 +7,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from utilities.paginator import ResponsePaginator
-from .models import Article, Rating
+from utilities.throttles import RatingThrottle
+from .models import Article, UserArticleRate
 from .serializers import RateArticleSerializer, ArticleListSerializer
 from .tasks import update_article_rating
 
 
-class ArticleListView(generics.GenericAPIView):
+class ArticleListViewSet(generics.GenericAPIView):
     queryset = Article.objects.filter(is_active=True)
     serializer_class = ArticleListSerializer
     permission_classes = [IsAuthenticated]
@@ -19,7 +22,7 @@ class ArticleListView(generics.GenericAPIView):
     def get(self, request):
         user = self.request.user
 
-        user_rating = Rating.objects.filter(
+        user_rating = UserArticleRate.objects.filter(
             user=user,
             article=OuterRef('pk')
         ).values('rate')[:1]
@@ -30,10 +33,11 @@ class ArticleListView(generics.GenericAPIView):
         return self.pagination_class.get_paginated_response(self.serializer_class(result, many=True).data)
 
 
-class RateArticleView(generics.GenericAPIView):
+class RateArticleViewSet(generics.GenericAPIView):
     queryset = Article.objects.filter(is_active=True)
     serializer_class = RateArticleSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [RatingThrottle]
     lookup_url_kwarg = 'article_uuid'
     lookup_field = 'uuid'
 
@@ -45,7 +49,8 @@ class RateArticleView(generics.GenericAPIView):
         user = self.request.user
         article = self.get_object()
 
-        Rating.objects.update_or_create(user=user, article=article, defaults={'rate': rate})
-        update_article_rating.delay(article.id)
-
-        return Response({"message": "Rating recorded successfully"}, status=status.HTTP_200_OK)
+        article_rate, created = UserArticleRate.objects.update_or_create(user=user, article=article,
+                                                                         defaults={'rate': rate})
+        if created:
+            return Response({"message": "Rating recorded successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Rating updated successfully"}, status=status.HTTP_200_OK)

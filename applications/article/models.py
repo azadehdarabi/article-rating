@@ -19,15 +19,15 @@ class Article(BaseModel):
         return self.title
 
 
-class Rating(BaseModel):
+class UserArticleRate(BaseModel):
     user = models.ForeignKey(verbose_name=_("User"), to=User, on_delete=models.CASCADE, db_index=True)
     article = models.ForeignKey(verbose_name=_("Article"), to=Article, on_delete=models.CASCADE,
                                 related_name=_("ratings"), db_index=True)
     rate = models.PositiveSmallIntegerField(verbose_name=_("Rate"))
 
     class Meta:
-        verbose_name = _("Rating")
-        verbose_name_plural = _("Ratings")
+        verbose_name = _("User Article Rate")
+        verbose_name_plural = _("Users Article Rate")
         unique_together = ('user', 'article')
 
     def __str__(self):

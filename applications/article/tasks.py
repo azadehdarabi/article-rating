@@ -1,16 +1,30 @@
 from celery import shared_task
-from django.db.models import Avg, Count
+from math import exp
+from django.utils import timezone
 
-from .models import Article, Rating
+from .models import Article, UserArticleRate
 
 
 @shared_task(name='update_article_rating')
 def update_article_rating(article_id):
-    aggregate_data = Rating.objects.filter(article_id=article_id).aggregate(
-        avg=Avg('rate'),
-        count=Count('rate')
-    )
+    ratings = UserArticleRate.objects.filter(article_id=article_id)
+    weighted_sum = 0.0
+    total_weight = 0.0
+    lambda_decay = 0.1  # Adjust decay rate as needed
+
+    for rating in ratings:
+        time_since_rating = (timezone.now() - rating.created_time).total_seconds()
+        weight = exp(-lambda_decay * time_since_rating)
+        weighted_sum += rating.rate * weight
+        total_weight += weight
+
+    if total_weight > 0:
+        average_rating = weighted_sum / total_weight
+    else:
+        average_rating = 0.0
+
+    rating_count = ratings.count()
     Article.objects.filter(id=article_id).update(
-        average_rating=aggregate_data['avg'] or 0,
-        rating_count=aggregate_data['count'] or 0
+        average_rating=average_rating,
+        rating_count=rating_count
     )
