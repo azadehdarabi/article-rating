@@ -27,7 +27,7 @@ class ArticleListViewSet(generics.GenericAPIView):
             article=OuterRef('pk')
         ).values('rate')[:1]
 
-        result = self.queryset.annotate(user_rating=Subquery(user_rating[:1]))
+        result = self.queryset.annotate(user_rating=Subquery(user_rating))
 
         result = self.pagination_class.paginate_queryset(request=self.request, queryset=result)
         return self.pagination_class.get_paginated_response(self.serializer_class(result, many=True).data)
