@@ -3,7 +3,7 @@ from rest_framework.response import Response
 
 
 class BasePaginator(CursorPagination):
-    ordering = ['-created_at']
+    ordering = ['-created_time']
 
 
 class CustomPageNumberPagination(PageNumberPagination, BasePaginator):

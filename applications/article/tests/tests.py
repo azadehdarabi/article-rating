@@ -28,3 +28,31 @@ class ArticleTestCase(APITestCase):
         self.assertEqual(response.status_code, 200)
 
         response_data = json.loads(response.content.decode())
+        expected_response = {
+            'links': {
+                'next': None,
+                'previous': None
+            },
+            'count': 3,
+            'total_pages': 1,
+            'results': [{
+                'uuid': str(self.article_1.uuid),
+                'title': self.article_1.title,
+                'rating_count': self.article_1.rating_count,
+                'average_rating': self.article_1.average_rating,
+                'user_rating': None
+            }, {
+                'uuid': str(self.article_2.uuid),
+                'title': self.article_2.title,
+                'rating_count': self.article_2.rating_count,
+                'average_rating': self.article_2.average_rating,
+                'user_rating': None
+            }, {
+                'uuid': str(self.article_3.uuid),
+                'title': self.article_3.title,
+                'rating_count': self.article_3.rating_count,
+                'average_rating': self.article_3.average_rating,
+                'user_rating': None
+            }]
+        }
+        self.assertEqual(response_data, expected_response)

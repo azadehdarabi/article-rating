@@ -7,7 +7,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from utilities.paginator import ResponsePaginator
-from utilities.throttles import RatingThrottle
 from .models import Article, UserArticleRate
 from .serializers import RateArticleSerializer, ArticleListSerializer
 from .tasks import update_article_rating
@@ -37,7 +36,6 @@ class RateArticleViewSet(generics.GenericAPIView):
     queryset = Article.objects.filter(is_active=True)
     serializer_class = RateArticleSerializer
     permission_classes = [IsAuthenticated]
-    throttle_classes = [RatingThrottle]
     lookup_url_kwarg = 'article_uuid'
     lookup_field = 'uuid'
 

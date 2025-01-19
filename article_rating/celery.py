@@ -11,11 +11,3 @@ app = Celery('article_rating')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
-
-app.conf.beat_schedule = {
-    'update-article-ratings-every-10-minutes': {
-        'task': 'article.tasks.update_article_rating',
-        'schedule': crontab(minute='*/10'),
-        'args': (),
-    },
-}
