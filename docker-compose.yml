@@ -1,0 +1,16 @@
+version: '3'
+services:
+  redis:
+    image: redis
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+
+  celery:
+    image: celery:latest
+    container_name: celery-container
+    command: celery -A article_rating worker --loglevel=info
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+    depends_on:
+      - redis
