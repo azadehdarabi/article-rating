@@ -4,9 +4,9 @@ from .models import Article, UserArticleRate
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'rating_count', 'average_rating', 'calculated_to')
+    list_display = ('title', 'rating_count', 'average_rating', 'last_calculation')
     search_fields = ('title',)
-    readonly_fields = ('uuid', 'created_time', 'updated_time', 'calculated_to')
+    readonly_fields = ('uuid', 'created_time', 'updated_time', 'last_calculation')
 
 
 @admin.register(UserArticleRate)

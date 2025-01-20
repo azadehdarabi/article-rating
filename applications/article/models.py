@@ -19,7 +19,7 @@ class Article(BaseModel):
     content = models.TextField(verbose_name=_("Content"))
     rating_count = models.PositiveIntegerField(verbose_name=_("Rating Count"), default=0)
     average_rating = models.FloatField(verbose_name=_("Average Rating"), default=0.0)
-    calculated_to = models.DateTimeField(verbose_name=_("Calculated To"), auto_now_add=True)
+    last_calculation = models.DateTimeField(verbose_name=_("Last Calculation"), auto_now_add=True)
 
     class Meta:
         verbose_name = _("Article")
@@ -29,35 +29,57 @@ class Article(BaseModel):
         return self.title
 
     def detect_spam_rates(self):
-        now = timezone.now()
-        time_from = now - datetime.timedelta(hours=settings.TIME_FROM_PAYLOAD)
-        last_content_scores = UserArticleRate.objects.filter(
-            created_time__gte=time_from, article=self
+        current_time = timezone.now()
+        ratings_window_start = current_time - datetime.timedelta(hours=settings.RATING_TIME_WINDOW)
+
+        recent_ratings = UserArticleRate.objects.filter(
+            created_time__gte=ratings_window_start, article=self
         )
 
-        if last_content_scores.count() < settings.MIN_SCORE_COUNT:
+        if recent_ratings.count() < settings.MIN_VALID_RATINGS:
             return
 
+        time_slices = self.create_time_slices(ratings_window_start)
+        average_rates_per_slice = self.calculate_average_rates_per_slice(recent_ratings, time_slices)
+
+        if not average_rates_per_slice:
+            return 0
+        overall_average_rate = sum(average_rates_per_slice.values()) / len(average_rates_per_slice)
+
+        self.flag_spam_ratings(average_rates_per_slice, overall_average_rate)
+
+    @staticmethod
+    def create_time_slices(ratings_window_start):
+        """
+        Create time slices for the analysis period.
+        """
         time_slices = []
-        for i in range(0, 60 * settings.TIME_FROM_PAYLOAD, settings.TIME_FROM_SLICE):
-            time_slice_start = time_from + datetime.timedelta(minutes=i)
-            time_slice_end = time_slice_start + datetime.timedelta(minutes=settings.TIME_FROM_SLICE)
-            time_slices.append((time_slice_start, time_slice_end))
+        for i in range(0, 60 * settings.RATING_TIME_WINDOW, settings.TIME_SLICE_INTERVAL):
+            slice_start = ratings_window_start + datetime.timedelta(minutes=i)
+            slice_end = slice_start + datetime.timedelta(minutes=settings.TIME_SLICE_INTERVAL)
+            time_slices.append((slice_start, slice_end))
+        return time_slices
 
-        time_slice_avg = {}
+    @staticmethod
+    def calculate_average_rates_per_slice(ratings, time_slices):
+        """
+        Calculate the average rate for each time slice.
+        """
+        average_rate = {}
         for start_time, end_time in time_slices:
-            avg_score = last_content_scores.filter(
+            avg_score = ratings.filter(
                 created_time__gte=start_time, created_time__lt=end_time
-            ).aggregate(Avg('score'))['score__avg'] or 0.0
-            time_slice_avg[(start_time, end_time)] = avg_score
+            ).aggregate(Avg('rate'))['rate__avg'] or 0.0
+            average_rate[(start_time, end_time)] = avg_score
+        return average_rate
 
-        if time_slice_avg:
-            average_overall = sum(time_slice_avg.values()) / len(time_slice_avg)
-        else:
-            average_overall = 0
-
-        for (start_time, end_time), average in time_slice_avg.items():
-            if average > 0 and (average / average_overall) > settings.SPAM_RATE_THRESHOLD:
+    @staticmethod
+    def flag_spam_ratings(average_rates, overall_average_rate):
+        """
+        Flag ratings as spam if their average rate significantly deviates from the overall average.
+        """
+        for (start_time, end_time), avg_rate in average_rates.items():
+            if avg_rate > 0 and (avg_rate / overall_average_rate) > settings.SPAM_RATE_THRESHOLD:
                 UserArticleRate.objects.filter(
                     created_time__gte=start_time, created_time__lt=end_time
                 ).update(is_spam=True)
