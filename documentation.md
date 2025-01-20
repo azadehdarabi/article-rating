@@ -44,7 +44,7 @@ Sample Response:
 ### Rate Article API
 
 ```plaintext
-/articles/rate_article/<str:article_uuid>/
+/articles/rate_article/<uuid:article_uuid>/
 ```
 
 Method: POST
