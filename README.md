@@ -20,7 +20,7 @@
   ```shell
   python manage.py makemigrations
   ```
-- Run tests with full detail for api
+- Run tests
   ```shell
   python manage.py test
   ```

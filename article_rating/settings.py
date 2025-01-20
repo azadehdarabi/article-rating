@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY', 'secret')
 DEBUG = bool(os.getenv('DEBUG', 'False').lower() in ('true', '1', 't', 'T'))
 
 ALLOWED_HOSTS = []
@@ -71,7 +71,6 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
     "SIGNING_KEY": SECRET_KEY,
-
 }
 
 ROOT_URLCONF = 'article_rating.urls'

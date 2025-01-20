@@ -10,7 +10,9 @@ def update_article_rating():
     updates = []
     now = timezone.now()
 
-    for article in Article.objects.all().iterator():
+    articles = Article.objects.all()
+
+    for article in articles:
         article.detect_spam_scores()
 
         new_average_score = UserArticleRate.objects.filter(
@@ -31,8 +33,8 @@ def update_article_rating():
 
         updates.append(Article(
             id=article.id,
-            score_average=updated_average_score,
-            score_count=updated_score_count,
+            average_rating=updated_average_score,
+            rating_count=updated_score_count,
             calculated_to=now
         ))
 

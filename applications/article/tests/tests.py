@@ -1,9 +1,5 @@
 import json
 import uuid
-from unittest import TestCase
-from unittest.mock import patch
-
-import django
 import factory
 
 from rest_framework import status
@@ -11,7 +7,6 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APIClient, APITestCase
 
 from applications.article.models import Article, UserArticleRate
-from applications.article.tasks import update_article_rating
 from applications.article.tests.factories import UserFactory, ArticleFactory, UserArticleRateFactory
 
 
@@ -20,9 +15,8 @@ class ArticleTestCase(APITestCase):
     def setUpTestData(cls):
         cls.user_1 = UserFactory()
 
-        cls.article_1 = ArticleFactory(title='article_1')
-        cls.article_2 = ArticleFactory(title='article_2')
-        cls.article_3 = ArticleFactory(title='article_3')
+        cls.article_1, cls.article_2, cls.article_3 = ArticleFactory.create_batch(3, title=factory.Iterator(
+            ['article_1', 'article_2', 'article_3']))
 
         UserArticleRateFactory.create_batch(2, user=cls.user_1,
                                             article=factory.Iterator([cls.article_1, cls.article_2]),

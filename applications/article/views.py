@@ -1,15 +1,11 @@
-from venv import create
-
-from django.db.models import OuterRef, Subquery, IntegerField
+from django.db.models import OuterRef, Subquery
 from rest_framework import status, generics
-from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from utilities.paginator import ResponsePaginator
 from .models import Article, UserArticleRate
 from .serializers import RateArticleSerializer, ArticleListSerializer
-from .tasks import update_article_rating
 
 
 class ArticleListViewSet(generics.GenericAPIView):
